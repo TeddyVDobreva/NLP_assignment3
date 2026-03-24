@@ -1,13 +1,16 @@
-from transformers import AutoModelForSequenceClassification, Trainer, TrainingArguments
+from transformers import (
+    AutoModelForSequenceClassification,
+    EarlyStoppingCallback,
+    Trainer,
+    TrainingArguments,
+)
 
 from src.data_handler import get_only_headline_test_dataset, get_preprocessed_data
 from src.evaluation import plot_confusion_matrix
 
-print("aaaaa".replace("bbb", "ccc"))
-
 
 def main():
-    train_dataset, val_dataset, test_dataset = get_preprocessed_data("data")
+    train_dataset, val_dataset, test_dataset = get_preprocessed_data("data", small=True)
 
     model_name = "FacebookAI/roberta-base"
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=4)
@@ -27,6 +30,7 @@ def main():
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
     )
 
     trainer.train()
