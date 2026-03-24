@@ -117,9 +117,9 @@ def get_preprocessed_data(path, small=True):
         train_dataset, val_dataset, test_dataset = _get_smaller_datasets(raw)
     else:
         train_dataset, val_dataset, test_dataset = _get_datasets(raw)
-    
+
     tokenized_train = train_dataset.map(tokenize_function, batched=True)
     tokenized_val = val_dataset.map(tokenize_function, batched=True)
     tokenized_test = test_dataset.map(tokenize_function, batched=True)
-    
+
     return tokenized_train, tokenized_val, tokenized_test
