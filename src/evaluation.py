@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any
 
 import matplotlib as plt
+import pandas as pd
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
     classification_report,
@@ -10,7 +11,7 @@ from sklearn.metrics import (
 
 
 def plot_confusion_matrix(
-    model: Any, loader: Any, model_name: str, dataset: str
+    model: Any, dataset: pd.DataFrame, model_name: str, dataset_name: str
 ) -> None:
     """
     Function evaluates the classification and saves its confusion matrix.
@@ -23,7 +24,7 @@ def plot_confusion_matrix(
 
     Returns: None
     """
-    results = model.evaluate(loader)
+    results = model.evaluate(dataset)
     y_true = results["y_true"]
     y_predict = results["y_pred"]
     Path("plots").mkdir(exist_ok=True)
@@ -33,5 +34,5 @@ def plot_confusion_matrix(
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
     disp.plot(xticks_rotation="vertical")
 
-    plt.savefig(f"plots/confusion_matrix_{model_name}_{dataset}")
+    plt.savefig(f"plots/confusion_matrix_{model_name}_{dataset_name}")
     plt.close()
