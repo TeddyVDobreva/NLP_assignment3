@@ -5,12 +5,12 @@ from transformers import (
     TrainingArguments,
 )
 
-from src.data_handler import get_only_headline_test_dataset, get_preprocessed_data
+from src.data_handler import get_only_headline_test_dataset, get_preprocessed_data, get_masked_test_dataset
 from src.evaluation import plot_confusion_matrix
 
 
 def main():
-    train_dataset, val_dataset, test_dataset = get_preprocessed_data("data", small=True)
+    train_dataset, val_dataset, test_dataset = get_preprocessed_data("data")
 
     model_name = "FacebookAI/roberta-base"
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=4)
@@ -51,7 +51,7 @@ def main():
     plot_confusion_matrix(trainer, test_dataset, model_name, "test dataset")
 
     # Robustness with headlines vs headlines+description
-    headlines_test_dataset = get_only_headline_test_dataset("/data")
+    headlines_test_dataset = get_only_headline_test_dataset("data")
     # accuracy + F1 on test set
     headlines_evaluation_test = trainer.evaluate(headlines_test_dataset)
     print(f"Headlines Results: {headlines_evaluation_test}")
@@ -59,7 +59,7 @@ def main():
     plot_confusion_matrix(trainer, headlines_test_dataset, model_name, "headlines test")
 
     # Robustness with keyword masking
-    mask_test_dataset = None
+    mask_test_dataset = get_masked_test_dataset("/data")
     # accuracy + F1 on test set
     mask_evaluation_test = trainer.evaluate(mask_test_dataset)
     print(f"Evaluation Results: {mask_evaluation_test}")
