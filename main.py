@@ -27,10 +27,17 @@ def main():
     )
 
     trainer.train()
-
-    evaluation_results = trainer.evaluate(test_dataset)
-    print(f"Evaluation Results: {evaluation_results}")
-
+    
+    # accuracy + F1 on validation set
+    evaluation_val= trainer.evaluate(val_dataset)
+    print(f"Evaluation Results: {evaluation_val}")
+    # confusion matrix on validation set
+    
+    # accuracy + F1 on test set
+    evaluation_test= trainer.evaluate(test_dataset)
+    print(f"Evaluation Results: {evaluation_test}")
+    # confusion matrix on test set
 
 if __name__ == "__main__":
     main()
+
