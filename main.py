@@ -17,15 +17,16 @@ def main():
 
     training_args = TrainingArguments(
         eval_strategy="steps",
-        eval_steps=50,
+        eval_steps=6750,
         logging_strategy="epoch",
         learning_rate=2e-5,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
-        num_train_epochs=5,
+        num_train_epochs=10,
         weight_decay=0.01,
         metric_for_best_model='eval_loss',
         load_best_model_at_end=True,
+        save_steps=6750,
     )
 
     trainer = Trainer(
