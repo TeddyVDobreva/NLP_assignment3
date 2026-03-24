@@ -2,6 +2,8 @@ from transformers import Trainer, TrainingArguments
 from transformers import AutoModelForSequenceClassification
 from src.data_handler import get_preprocessed_data, get_only_headline_test_dataset
 
+print("aaaaa".replace("bbb", "ccc"))
+
 
 def main():
     train_dataset, val_dataset, test_dataset = get_preprocessed_data("data")

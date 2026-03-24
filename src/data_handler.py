@@ -15,6 +15,28 @@ BATCH_SIZE = 64
 N_TRAIN = 500
 N_VAL = 100
 N_TEST = 100
+MASK_WORDS = [
+    "investor",
+    "stocks",
+    "sales",
+    "company",
+    "market",
+    "internet",
+    "microsoft",
+    "google",
+    "software",
+    "technology",
+    "game",
+    "olympic",
+    "coach",
+    "season",
+    "league",
+    "president",
+    "world",
+    "national",
+    "oil",
+    "government",
+]
 
 
 def _get_raw_data(path: str) -> Dict[str, ds]:
@@ -111,8 +133,12 @@ def _tokenize_function(examples):
     # print(examples["text"][0])
     return tokenizer(examples["text"], padding="max_length", truncation=True)
 
+
 def _mask(dataset):
-    pass
+    for text in dataset['text']:
+        for word in MASK_WORDS:
+            text.replace(word, MASK)
+
 
 def get_preprocessed_data(path, small=True):
     raw = _get_raw_data(path)
@@ -127,6 +153,7 @@ def get_preprocessed_data(path, small=True):
 
     return tokenized_train, tokenized_val, tokenized_test
 
+
 def get_only_headline_test_dataset(path):
     test_data = pd.read_csv(path + "/test.csv")
     X_test = pd.DataFrame(
@@ -136,6 +163,7 @@ def get_only_headline_test_dataset(path):
         }
     )
     return X_test.map(_tokenize_function, batched=True)
+
 
 def get_masked_test_dataset(path):
     test_data = pd.read_csv(path + "/test.csv")
