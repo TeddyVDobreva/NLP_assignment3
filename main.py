@@ -16,14 +16,15 @@ def main():
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=4)
 
     training_args = TrainingArguments(
-        eval_strategy="epoch",
+        eval_strategy="steps",
+        eval_steps=50,
         logging_strategy="epoch",
         learning_rate=2e-5,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
         num_train_epochs=5,
         weight_decay=0.01,
-        metric_for_best_model="accuracy",
+        metric_for_best_model='eval_loss',
         load_best_model_at_end=True,
     )
 
@@ -36,27 +37,26 @@ def main():
     )
 
     trainer.train()
-
+    
     # accuracy + F1 on validation set
     evaluation_val = trainer.evaluate(val_dataset)
     print(f"Validation Results: {evaluation_val}")
     # confusion matrix on validation set
-    plot_confusion_matrix(model, val_dataset, model_name, "validation dataset")
+    plot_confusion_matrix(trainer, val_dataset, model_name, "validation dataset")
 
     # accuracy + F1 on test set
     evaluation_test = trainer.evaluate(test_dataset)
     print(f"Test Results: {evaluation_test}")
     # confusion matrix on test set
-    plot_confusion_matrix(model, test_dataset, model_name, "test dataset")
+    plot_confusion_matrix(trainer, test_dataset, model_name, "test dataset")
 
     # Robustness with headlines vs headlines+description
-    headlines_test_dataset = get_only_headline_test_dataset("data")
-
+    headlines_test_dataset = get_only_headline_test_dataset("/data")
     # accuracy + F1 on test set
     headlines_evaluation_test = trainer.evaluate(headlines_test_dataset)
     print(f"Headlines Results: {headlines_evaluation_test}")
     # confusion matrix on test set
-    plot_confusion_matrix(model, headlines_test_dataset, model_name, "headlines test")
+    plot_confusion_matrix(trainer, headlines_test_dataset, model_name, "headlines test")
 
     # Robustness with keyword masking
     mask_test_dataset = None
@@ -64,7 +64,8 @@ def main():
     mask_evaluation_test = trainer.evaluate(mask_test_dataset)
     print(f"Evaluation Results: {mask_evaluation_test}")
     # confusion matrix on test set
-    plot_confusion_matrix(model, mask_test_dataset, model_name, "mask dataset")
+    plot_confusion_matrix(trainer, mask_test_dataset, model_name, "mask dataset")
+
 
 
 if __name__ == "__main__":

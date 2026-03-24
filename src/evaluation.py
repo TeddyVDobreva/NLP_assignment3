@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any
+import numpy as np
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -24,9 +25,9 @@ def plot_confusion_matrix(
 
     Returns: None
     """
-    results = model.evaluate(dataset)
-    y_true = results["y_true"]
-    y_predict = results["y_pred"]
+    results = model.predict(dataset)
+    y_predict = [np.argmax(a) for a in results[0]]
+    y_true = dataset["label"]
     Path("plots").mkdir(exist_ok=True)
     print(classification_report(y_true, y_predict))
 

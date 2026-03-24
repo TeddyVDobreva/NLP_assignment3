@@ -1,9 +1,9 @@
 from typing import Dict, Tuple
 
 import pandas as pd
+from transformers import AutoTokenizer
 from datasets import Dataset as ds
 from sklearn.model_selection import train_test_split
-from transformers import AutoTokenizer
 
 PAD = "<pad>"
 UNK = "<unk>"
@@ -135,7 +135,7 @@ def _tokenize_function(examples):
 
 
 def _mask(dataset):
-    for text in dataset["text"]:
+    for text in dataset['text']:
         for word in MASK_WORDS:
             text.replace(word, MASK)
 
@@ -159,9 +159,10 @@ def get_only_headline_test_dataset(path):
     X_test = pd.DataFrame(
         {
             "text": test_data["Title"],
-            "label": test_data["Class Index"],
+            "label": [idx - 1 for idx in test_data["Class Index"]],
         }
     )
+    X_test = ds.from_pandas(X_test, preserve_index=False)
     return X_test.map(_tokenize_function, batched=True)
 
 
@@ -170,8 +171,9 @@ def get_masked_test_dataset(path):
     X_test = pd.DataFrame(
         {
             "text": test_data["Title"] + test_data["Description"],
-            "label": test_data["Class Index"],
+            "label": [idx - 1 for idx in test_data["Class Index"]],
         }
     )
+    X_test = ds.from_pandas(X_test, preserve_index=False)
     X_test = _mask(X_test)
     return X_test.map(_tokenize_function, batched=True)
