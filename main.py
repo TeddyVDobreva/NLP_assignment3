@@ -1,35 +1,14 @@
-from datasets import load_dataset
 import torch
-from transformers import AutoTokenizer
 from transformers import Trainer, TrainingArguments
 from transformers import AutoModelForSequenceClassification
+from src.data_handler import get_preprocessed_data
 
 
 def main():
-    device = 0 if torch.cuda.is_available() else -1
+    train_dataset, val_dataset, test_dataset = get_preprocessed_data("data")
 
-    dataset = load_dataset("imdb")
-    train_dataset = (
-        dataset["train"].shuffle(seed=42).select(range(100))
-    )  # Using a subset for quick fine-tuning
-    test_dataset = dataset["test"].shuffle(seed=42).select(range(100))
-
-
-    model_name = "distilbert-base-uncased"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-
-    def tokenize_function(examples):
-        # print(examples["text"][0])
-        return tokenizer(examples["text"], padding="max_length", truncation=True)
-
-
-    tokenized_train = train_dataset.map(tokenize_function, batched=True)
-    tokenized_test = test_dataset.map(tokenize_function, batched=True)
-    
-    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2).to(
-    device
-    )
+    model_name  = "FacebookAI/roberta-base"
+    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=4)
     
     training_args = TrainingArguments(
         eval_strategy="epoch",
@@ -44,14 +23,14 @@ def main():
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=tokenized_train,
-        eval_dataset=tokenized_test,
+        train_dataset=train_dataset,
+        eval_dataset=val_dataset,
     )
     
     trainer.train()
     
-    eval_results = trainer.evaluate()
-    print(f"Evaluation Results: {eval_results}")
+    evaluation_results = trainer.evaluate(test_dataset)
+    print(f"Evaluation Results: {evaluation_results}")
     
     input_string = "I really liked this tutorial!"
 

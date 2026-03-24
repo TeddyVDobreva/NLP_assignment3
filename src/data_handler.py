@@ -1,15 +1,9 @@
-from collections import Counter
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Dict, Tuple
 
-import matplotlib.pyplot as plt
 import pandas as pd
-import tensorflow_text as tf_text
-import torch
+from transformers import AutoTokenizer
 from datasets import Dataset as ds
 from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, Dataset
 
 PAD = "<pad>"
 UNK = "<unk>"
@@ -111,240 +105,19 @@ def _get_datasets(raw: Dict[str, ds]) -> Tuple[ds, ds, ds]:
     return train, validation, test
 
 
-def _tokenize_data(data: str) -> list[str]:
-    """
-    Function which tokenizes the text input.
-
-    Args:
-        data: input string
-
-    Returns:
-        List of tokens extracted from the input
-    """
-    tokenizer = tf_text.UnicodeScriptTokenizer()
-    tokens = tokenizer.tokenize([data])
-    return tokens.to_list()[0]
+def tokenize_function(examples):
+    tokenizer = AutoTokenizer.from_pretrained("FacebookAI/roberta-base")
+    # print(examples["text"][0])
+    return tokenizer(examples["text"], padding="max_length", truncation=True)
 
 
-def _build_vocab(texts, min_freq: int = 2, max_size: int = 30000) -> dict:
-    """
-    Build a vocabulary mapping from tokens to integer indices.
-    The vocabulary will include only tokens that appear at least `min_freq` times,
-    and will be limited to `max_size` tokens (including PAD and UNK).
-
-    Args:
-        texts: input texts used to create the vocabulary
-        min_freq: minimum number of appearances needed for adding to the vocabulary
-        max_size: maximum size of the vocabulary
-
-    Returns:
-        vocab: dictionary which maps the tokens to integer indices
-    """
-    counter = Counter()
-    for text in texts:
-        counter.update(_tokenize_data(text))
-    # Reserve 0 for PAD and 1 for UNK.
-    vocab = {PAD: 0, UNK: 1}
-    for word, freq in counter.most_common():
-        if freq < min_freq:
-            break
-        if len(vocab) >= max_size:
-            break
-        vocab[word] = len(vocab)
-    return vocab
-
-
-def _numericalize(tokens: list, vocab: dict) -> list:
-    """
-    Convert a list of tokens into a list of integer indices using the provided vocabulary.
-    Tokens not found in the vocabulary will be mapped to the index of UNK.
-
-    Args:
-        tokens: list of tokenized words
-        vocab: dictionary which maps the tokens to integer indices
-
-    Returns:
-        A list of integer token indices
-    """
-    return [vocab.get(tok, vocab[UNK]) for tok in tokens]
-
-
-@dataclass
-class Batch:
-    """
-    Class which represents the data used for model training.
-    """
-
-    x: torch.Tensor  # (B, T) token ids
-    lengths: torch.Tensor  # (B,) true lengths
-    y: torch.Tensor  # (B,) labels
-
-
-class TextDataset(Dataset):
-    """
-    Dataset used for text classification.
-    """
-
-    def __init__(
-        self,
-        hf_ds: dict,
-        vocab: dict,
-        max_len: int = 200,
-    ) -> None:
-
-        self.vocab = vocab
-        self.max_len = max_len
-        self.labels = []
-        self.numericalized = []
-        self._numericalize_all(hf_ds)
-
-    def _numericalize_all(self, hf_ds: dict):
-        """
-        Converts the text from the dataset into token id sequences.
-
-        Args:
-            hf_ds: HuggingFace dataset which contains the text samples
-
-        Returns:
-            None
-        """
-        for item in hf_ds:
-            tokens = _tokenize_data(item["text"])
-            # Convert to ids and truncate
-            if len(tokens) == 0:
-                ids = [self.vocab[UNK]]
-            else:
-                ids = _numericalize(tokens, self.vocab)[: self.max_len]
-                if len(ids) == 0:
-                    ids = [self.vocab[UNK]]
-            self.numericalized.append(ids)
-            self.labels.append(int(item["label"]) - 1)
-
-    def __len__(self) -> int:
-        """Return the number of samples in the dataset."""
-        return len(self.labels)
-
-    def __getitem__(self, idx: int) -> tuple:
-        """
-        Given an index, return the token ids and label for the corresponding sample.
-
-        Args:
-            idx: index of the sample
-
-        Returns:
-            Tuple which contains the token id sequence and the label
-        """
-        return self.numericalized[idx], self.labels[idx]
-
-
-def collate(batch: list) -> Batch:
-    """
-    Collate function to convert a list of samples into a batch.
-
-    Args:
-        batch: list of samples where each sample is a tuple
-
-    Returns:
-        A Batch object containing:
-            - x: tensor of token ids
-            - lengths: tensor of lengths
-            - y: tensor of labels
-    """
-    # batch: list of (ids_list, label)
-    lengths = torch.tensor([len(x) for x, _ in batch], dtype=torch.long)
-    max_len = int(lengths.max().item()) if len(batch) > 0 else 0
-    x = torch.full((len(batch), max_len), 0, dtype=torch.long)
-    y = torch.tensor([y for _, y in batch], dtype=torch.long)
-    for i, (ids, _) in enumerate(batch):
-        x[i, : len(ids)] = torch.tensor(ids, dtype=torch.long)
-    return Batch(x=x, lengths=lengths, y=y)
-
-
-def _plot_lengths(data) -> None:
-    """
-    Function which creates the histogram for the distribution of length of the texts.
-
-    Args:
-        data: dataset containing the input strings
-
-    Returns:
-        None
-    """
-    Path("plots").mkdir(exist_ok=True)
-
-    lengths = [len(_tokenize_data(text)) for text in data["text"]]
-    plt.hist(lengths, bins=50)
-    plt.title("Distribution of tokenized text lengths in training set")
-    plt.xlabel("Length of tokenized text")
-    plt.ylabel("Frequency")
-    plt.savefig("plots/lengths_distribution")
-    plt.close()
-
-
-def get_preprocessed_data(
-    path, small_datasets=False, plots=False
-) -> tuple[
-    Any,  # X_train
-    Any,  # X_validation
-    Any,  # X_test
-    Any,  # vocab
-]:
-    """
-    Function combines the Title an Description columns into one variable, and
-    applies a TF- IDF vectorizer (with english stopwords). Then, the vectorizer
-    is used to transform the training, validation, and test data sets.
-
-    Arguments:
-        training_data: pd.DataFrame- Training data which contains the Title
-            and Description columns.
-        validation_data: pd.DataFrame- Validation data which contains the Title
-            and Description columns.
-        test_data: pd.DataFrame- Test data which contains the Title
-            and Description columns.
-    Returns:
-        Tuple[csr_matrix, csr_matrix, csr_matrix, Series, Series, Series]
-            A tuple which contains:
-            - X_train: TF-IDF training set.
-            - X_validation: TF-IDF validation set.
-            - X_test: TF-IDF test set.
-            - original_train: Training set.
-            - original_validation: Validation set.
-            - original_test: Test set.
-    """
+def get_preprocessed_data(path, small=True):
     raw = _get_raw_data(path)
-
-    if small_datasets:
-        train_ds_hf, val_ds_hf, test_ds_hf = _get_smaller_datasets(raw)
+    if small:
+        train_dataset, val_dataset, test_dataset = _get_smaller_datasets(raw)
     else:
-        train_ds_hf, val_ds_hf, test_ds_hf = _get_datasets(raw)
-
-    print(
-        f"Dataset lengths: train={len(train_ds_hf)}, val={len(val_ds_hf)}, test={len(test_ds_hf)}"
-    )
-
-    vocab = _build_vocab(train_ds_hf["text"], min_freq=2, max_size=30000)
-
-    if plots:
-        _plot_lengths(train_ds_hf)
-
-    print(f"Using MAX_LEN={MAX_LEN} and BATCH_SIZE={BATCH_SIZE}")
-
-    train_ds = TextDataset(train_ds_hf, vocab, max_len=MAX_LEN)
-    val_ds = TextDataset(val_ds_hf, vocab, max_len=MAX_LEN)
-    test_ds = TextDataset(test_ds_hf, vocab, max_len=MAX_LEN)
-
-    train_loader = DataLoader(
-        train_ds, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate
-    )
-    val_loader = DataLoader(
-        val_ds, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate
-    )
-    test_loader = DataLoader(
-        test_ds, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate
-    )
-    return (
-        train_loader,
-        val_loader,
-        test_loader,
-        vocab,
-    )
+        train_dataset, val_dataset, test_dataset = _get_datasets(raw)
+    
+    tokenized_train = train_dataset.map(tokenize_function, batched=True)
+    tokenized_val = val_dataset.map(tokenize_function, batched=True)
+    tokenized_test = test_dataset.map(tokenize_function, batched=True)
