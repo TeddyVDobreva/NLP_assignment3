@@ -1,9 +1,9 @@
 from typing import Dict, Tuple
 
 import pandas as pd
-from transformers import AutoTokenizer
 from datasets import Dataset as ds
 from sklearn.model_selection import train_test_split
+from transformers import AutoTokenizer
 
 PAD = "<pad>"
 UNK = "<unk>"
@@ -63,19 +63,19 @@ def _get_raw_data(path: str) -> Dict[str, ds]:
     X_train = pd.DataFrame(
         {
             "text": train_data["Title"] + train_data["Description"],
-            "label": train_data["Class Index"],
+            "label": [idx - 1 for idx in train_data["Class Index"]],
         }
     )
     X_validation = pd.DataFrame(
         {
             "text": validation_data["Title"] + validation_data["Description"],
-            "label": validation_data["Class Index"],
+            "label": [idx - 1 for idx in validation_data["Class Index"]],
         }
     )
     X_test = pd.DataFrame(
         {
             "text": test_data["Title"] + test_data["Description"],
-            "label": test_data["Class Index"],
+            "label": [idx - 1 for idx in test_data["Class Index"]],
         }
     )
 
@@ -135,7 +135,7 @@ def _tokenize_function(examples):
 
 
 def _mask(dataset):
-    for text in dataset['text']:
+    for text in dataset["text"]:
         for word in MASK_WORDS:
             text.replace(word, MASK)
 
