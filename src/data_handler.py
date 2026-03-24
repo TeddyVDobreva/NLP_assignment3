@@ -135,9 +135,14 @@ def _tokenize_function(examples):
 
 
 def _mask(dataset):
-    for text in dataset['text']:
-        for word in MASK_WORDS:
-            text.replace(word, MASK)
+  new = []
+  for text in dataset['text']:
+      for word in MASK_WORDS:
+          text = text.replace(word, MASK)
+      new.append(text)
+  dataset.drop(['text'], axis=1)
+  dataset['text'] = new
+  return dataset
 
 
 def get_preprocessed_data(path, small=True):
@@ -174,6 +179,7 @@ def get_masked_test_dataset(path):
             "label": [idx - 1 for idx in test_data["Class Index"]],
         }
     )
-    X_test = ds.from_pandas(X_test, preserve_index=False)
+    
     X_test = _mask(X_test)
+    X_test = ds.from_pandas(X_test, preserve_index=False)
     return X_test.map(_tokenize_function, batched=True)
