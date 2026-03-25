@@ -1,20 +1,14 @@
 from typing import Dict, Tuple
 
 import pandas as pd
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, BatchEncoding
 from datasets import Dataset as ds
 from sklearn.model_selection import train_test_split
 
-PAD = "<pad>"
-UNK = "<unk>"
-MASK = "<mask>"
-MAX_LEN = 64
-BATCH_SIZE = 64
-
-# Subsample for speed
 N_TRAIN = 500
 N_VAL = 100
 N_TEST = 100
+MASK = "<mask>"
 MASK_WORDS = [
     "investor",
     "stocks",
@@ -128,24 +122,52 @@ def _get_datasets(raw: Dict[str, ds]) -> Tuple[ds, ds, ds]:
     return train, validation, test
 
 
-def _tokenize_function(examples):
+def _tokenize_function(dataset: ds) -> BatchEncoding:
+    """
+    Tokenizes the texrt samples in a provided dataset, using the best tokenizer for RoBERTa
+    Args:
+        samples (ds): dataset with text samples
+
+    Returns:
+        : the tokenized samples
+    """
     tokenizer = AutoTokenizer.from_pretrained("FacebookAI/roberta-base")
-    # print(examples["text"][0])
-    return tokenizer(examples["text"], padding="max_length", truncation=True, seed=67)
+    return tokenizer(dataset["text"], padding="max_length", truncation=True, seed=67)
 
 
-def _mask(dataset):
-  new = []
-  for text in dataset['text']:
-      for word in MASK_WORDS:
-          text = text.replace(word, MASK)
-      new.append(text)
-  dataset.drop(['text'], axis=1)
-  dataset['text'] = new
-  return dataset
+def _mask(dataset: pd.DataFrame) -> pd.DataFrame:
+    """
+    Masks field-specific words from a dataset with text samples with '<mask>'
+
+    Args:
+        dataset (pd.DataFrame): dataset with text samples
+
+    Returns:
+        pd.DataFrame: the samples with masked field-specific words
+    """
+    new = []
+    for text in dataset["text"]:
+        for word in MASK_WORDS:
+            text = text.replace(word, MASK)
+        new.append(text)
+    dataset.drop(["text"], axis=1)
+    dataset["text"] = new
+    return dataset
 
 
-def get_preprocessed_data(path, small=False):
+def get_preprocessed_data(
+    path: str, small: bool = False
+) -> tuple[BatchEncoding, BatchEncoding, BatchEncoding]:
+    """
+    Gets data from a provided path, divides it into training, validation, and test sets, and tokenizes it
+
+    Args:
+        path (str): path to the folder in which the data is stored
+        small (bool, optional): when small is True, a small fraction of the dataset is used
+
+    Returns:
+        tuple[BatchEncoding, BatchEncoding, BatchEncoding]: tokenized data, devided into training, validation, and testing data
+    """
     raw = _get_raw_data(path)
     if small:
         train_dataset, val_dataset, test_dataset = _get_smaller_datasets(raw)
@@ -159,7 +181,16 @@ def get_preprocessed_data(path, small=False):
     return tokenized_train, tokenized_val, tokenized_test
 
 
-def get_only_headline_test_dataset(path):
+def get_only_headline_test_dataset(path: str) -> BaseException:
+    """
+    Gets only the headlines in the testing data from a path and tokenizes it
+
+    Args:
+        path (str): path to the folder in which the data is stored
+
+    Returns:
+        BaseException: tokenized testing data with only headlines
+    """
     test_data = pd.read_csv(path + "/test.csv")
     X_test = pd.DataFrame(
         {
@@ -171,7 +202,16 @@ def get_only_headline_test_dataset(path):
     return X_test.map(_tokenize_function, batched=True)
 
 
-def get_masked_test_dataset(path):
+def get_masked_test_dataset(path) -> BaseException:
+    """
+    Masks field-specific words in the testing data from a path and tokenizes it
+
+    Args:
+        path (str): path to the folder in which the data is stored
+
+    Returns:
+        BaseException: tokenized testing data with masked field-specific words
+    """
     test_data = pd.read_csv(path + "/test.csv")
     X_test = pd.DataFrame(
         {
@@ -179,7 +219,7 @@ def get_masked_test_dataset(path):
             "label": [idx - 1 for idx in test_data["Class Index"]],
         }
     )
-    
+
     X_test = _mask(X_test)
     X_test = ds.from_pandas(X_test, preserve_index=False)
     return X_test.map(_tokenize_function, batched=True)

@@ -5,7 +5,11 @@ from transformers import (
     TrainingArguments,
 )
 
-from src.data_handler import get_only_headline_test_dataset, get_preprocessed_data, get_masked_test_dataset
+from src.data_handler import (
+    get_only_headline_test_dataset,
+    get_preprocessed_data,
+    get_masked_test_dataset,
+)
 from src.evaluation import plot_confusion_matrix
 
 
@@ -24,7 +28,7 @@ def main():
         per_device_eval_batch_size=16,
         num_train_epochs=10,
         weight_decay=0.01,
-        metric_for_best_model='eval_loss',
+        metric_for_best_model="eval_loss",
         load_best_model_at_end=True,
         save_steps=6750,
         seed=67,
@@ -39,7 +43,7 @@ def main():
     )
 
     trainer.train()
-    
+
     # accuracy + F1 on validation set
     evaluation_val = trainer.evaluate(val_dataset)
     print(f"Validation Results: {evaluation_val}")
@@ -61,13 +65,12 @@ def main():
     plot_confusion_matrix(trainer, headlines_test_dataset, model_name, "headlines test")
 
     # Robustness with keyword masking
-    mask_test_dataset = get_masked_test_dataset("/data")
+    mask_test_dataset = get_masked_test_dataset("data")
     # accuracy + F1 on test set
     mask_evaluation_test = trainer.evaluate(mask_test_dataset)
     print(f"Masked Results: {mask_evaluation_test}")
     # confusion matrix on test set
     plot_confusion_matrix(trainer, mask_test_dataset, model_name, "mask dataset")
-
 
 
 if __name__ == "__main__":
