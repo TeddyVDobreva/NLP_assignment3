@@ -131,7 +131,7 @@ def _get_datasets(raw: Dict[str, ds]) -> Tuple[ds, ds, ds]:
 def _tokenize_function(examples):
     tokenizer = AutoTokenizer.from_pretrained("FacebookAI/roberta-base")
     # print(examples["text"][0])
-    return tokenizer(examples["text"], padding="max_length", truncation=True)
+    return tokenizer(examples["text"], padding="max_length", truncation=True, seed=67)
 
 
 def _mask(dataset):
@@ -145,7 +145,7 @@ def _mask(dataset):
   return dataset
 
 
-def get_preprocessed_data(path, small=True):
+def get_preprocessed_data(path, small=False):
     raw = _get_raw_data(path)
     if small:
         train_dataset, val_dataset, test_dataset = _get_smaller_datasets(raw)

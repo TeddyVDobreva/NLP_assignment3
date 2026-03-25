@@ -27,6 +27,7 @@ def main():
         metric_for_best_model='eval_loss',
         load_best_model_at_end=True,
         save_steps=6750,
+        seed=67,
     )
 
     trainer = Trainer(
@@ -63,7 +64,7 @@ def main():
     mask_test_dataset = get_masked_test_dataset("/data")
     # accuracy + F1 on test set
     mask_evaluation_test = trainer.evaluate(mask_test_dataset)
-    print(f"Evaluation Results: {mask_evaluation_test}")
+    print(f"Masked Results: {mask_evaluation_test}")
     # confusion matrix on test set
     plot_confusion_matrix(trainer, mask_test_dataset, model_name, "mask dataset")
 
