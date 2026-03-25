@@ -12,7 +12,7 @@ from sklearn.metrics import (
 
 
 def plot_confusion_matrix(
-    model: Any, dataset: pd.DataFrame, model_name: str, dataset_name: str
+    model: Any, dataset: pd.DataFrame, dataset_name: str
 ) -> None:
     """
     Function evaluates the classification and saves its confusion matrix.
@@ -20,7 +20,6 @@ def plot_confusion_matrix(
     Arguments:
         y_true: Series- True labels.
         y_predict: Series- Predicted labels.
-        model_name: str- Name of the model.
         dataset: str- Dataset identifier.
 
     Returns: None
@@ -35,5 +34,5 @@ def plot_confusion_matrix(
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
     disp.plot(xticks_rotation="vertical")
 
-    plt.savefig(f"plots/confusion_matrix_{model_name}_{dataset_name}")
+    plt.savefig(f"plots/confusion_matrix_{dataset_name}")
     plt.close()

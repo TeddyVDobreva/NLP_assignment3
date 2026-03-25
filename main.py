@@ -63,13 +63,13 @@ def main():
     evaluation_val = trainer.evaluate(val_dataset)
     print(f"Validation Results: {evaluation_val}")
     # confusion matrix on validation set
-    plot_confusion_matrix(trainer, val_dataset, model_name, "validation dataset")
+    plot_confusion_matrix(trainer, val_dataset, "validation_dataset")
 
     # accuracy + F1 on test set
     evaluation_test = trainer.evaluate(test_dataset)
     print(f"Test Results: {evaluation_test}")
     # confusion matrix on test set
-    plot_confusion_matrix(trainer, test_dataset, model_name, "test dataset")
+    plot_confusion_matrix(trainer, test_dataset, "test_dataset")
 
     # Robustness with headlines vs headlines+description
     headlines_test_dataset = get_only_headline_test_dataset("data")
@@ -77,7 +77,7 @@ def main():
     headlines_evaluation_test = trainer.evaluate(headlines_test_dataset)
     print(f"Headlines Results: {headlines_evaluation_test}")
     # confusion matrix on test set
-    plot_confusion_matrix(trainer, headlines_test_dataset, model_name, "headlines test")
+    plot_confusion_matrix(trainer, headlines_test_dataset, "headlines_test")
 
     # Robustness with keyword masking
     mask_test_dataset = get_masked_test_dataset("data")
@@ -85,7 +85,7 @@ def main():
     mask_evaluation_test = trainer.evaluate(mask_test_dataset)
     print(f"Masked Results: {mask_evaluation_test}")
     # confusion matrix on test set
-    plot_confusion_matrix(trainer, mask_test_dataset, model_name, "mask dataset")
+    plot_confusion_matrix(trainer, mask_test_dataset, "mask_dataset")
 
 
 if __name__ == "__main__":
