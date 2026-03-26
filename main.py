@@ -10,7 +10,7 @@ from src.data_handler import (
     get_preprocessed_data,
     get_masked_test_dataset,
 )
-from src.evaluation import plot_confusion_matrix
+from src.evaluation import plot_confusion_matrix, get_misclassified_examples
 import random
 import numpy as np
 import torch
@@ -86,6 +86,9 @@ def main():
     print(f"Masked Results: {mask_evaluation_test}")
     # confusion matrix on test set
     plot_confusion_matrix(trainer, mask_test_dataset, "mask_dataset")
+
+    # error analysis
+    get_misclassified_examples(trainer, test_dataset)
 
 
 if __name__ == "__main__":
