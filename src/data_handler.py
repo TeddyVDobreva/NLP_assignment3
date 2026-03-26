@@ -4,6 +4,7 @@ import pandas as pd
 from transformers import AutoTokenizer, BatchEncoding
 from datasets import Dataset as ds
 from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 
 N_TRAIN = 500
 N_VAL = 100
@@ -132,7 +133,20 @@ def _tokenize_function(dataset: ds) -> BatchEncoding:
         : the tokenized samples
     """
     tokenizer = AutoTokenizer.from_pretrained("FacebookAI/roberta-base")
-    return tokenizer(dataset["text"], padding="max_length", truncation=True, seed=67)
+    return tokenizer(
+        dataset["text"], padding="max_length", max_length=100, truncation=True, seed=67
+    )
+
+
+def _plot_lens(data) -> None:
+    """Plot distribution of lengths in the training set"""
+    tokenized_data = data.map(_tokenize_function, batched=True)
+    lengths = [len(text["input_ids"]) for text in tokenized_data]
+    plt.hist(lengths, bins=50)
+    plt.title("Distribution of tokenized text lengths in training set")
+    plt.xlabel("Length of tokenized text")
+    plt.ylabel("Frequency")
+    plt.show()
 
 
 def _mask(dataset: pd.DataFrame) -> pd.DataFrame:
@@ -173,7 +187,7 @@ def get_preprocessed_data(
         train_dataset, val_dataset, test_dataset = _get_smaller_datasets(raw)
     else:
         train_dataset, val_dataset, test_dataset = _get_datasets(raw)
-
+    # _plot_lens(train_dataset)
     tokenized_train = train_dataset.map(_tokenize_function, batched=True)
     tokenized_val = val_dataset.map(_tokenize_function, batched=True)
     tokenized_test = test_dataset.map(_tokenize_function, batched=True)
