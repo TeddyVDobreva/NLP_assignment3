@@ -30,25 +30,25 @@ First, clone the repository by running:
 
 - for SSH
 
-'''
-git clone git@github.com:TeddyVDobreva/NLP_assignment2.git
-'''
+```
+git@github.com:TeddyVDobreva/NLP_assignment3.git
+```
 
 - for HTTPS
 
-'''
-git clone https://github.com/TeddyVDobreva/NLP_assignment2.git
-'''
+```
+https://github.com/TeddyVDobreva/NLP_assignment3.git
+```
 
 After cloning the repository, you want to activate the uv environement.
 
-'''
+```
 uv sync
 uv source .venv/bin/activate
-'''
+```
 
 After this, you are ready run the code in the terminal:
 
-'''
+```
 python main.py
-'''
+```
