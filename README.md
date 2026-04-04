@@ -29,10 +29,13 @@ You can run the code by following the instructions enclosed here.
 First, clone the repository by running:
 
 - for SSH
+
 '''
 git clone git@github.com:TeddyVDobreva/NLP_assignment2.git
 '''
+
 - for HTTPS
+
 '''
 git clone https://github.com/TeddyVDobreva/NLP_assignment2.git
 '''
@@ -45,6 +48,7 @@ uv source .venv/bin/activate
 '''
 
 After this, you are ready run the code in the terminal:
+
 '''
 python main.py
 '''
