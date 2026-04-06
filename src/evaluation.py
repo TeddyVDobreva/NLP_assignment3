@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Any
-import numpy as np
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
@@ -81,6 +81,3 @@ def _show_errors(errs: list) -> None:
         print(f"error {i + 1}")
         print("true:", LABELS[y], "pred:", LABELS[p])
         print("text:", snip)
-        # snip = snip.replace("&", "\\&").replace("\\", "$\\setminus$")
-        # print(f"{i + 1} & {LABELS[p]} & {LABELS[y]} & {snip}\\\\")
-        # print("\\hline")

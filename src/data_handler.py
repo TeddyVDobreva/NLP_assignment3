@@ -1,10 +1,10 @@
 from typing import Dict, Tuple
 
+import matplotlib.pyplot as plt
 import pandas as pd
-from transformers import AutoTokenizer, BatchEncoding
 from datasets import Dataset as ds
 from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
+from transformers import AutoTokenizer, BatchEncoding
 
 N_TRAIN = 500
 N_VAL = 100
@@ -117,7 +117,7 @@ def _get_datasets(raw: Dict[str, ds]) -> Tuple[ds, ds, ds]:
             - validation dataset
             - test dataset
     """
-    train = raw["train"].shuffle(seed=67)  # We only shuffle the training set
+    train = raw["train"].shuffle(seed=67)
     validation = raw["validation"]
     test = raw["test"]
     return train, validation, test
